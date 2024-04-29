@@ -1,5 +1,6 @@
+
 import 'package:flutter/material.dart';
-import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
+import 'package:firebase_storage/firebase_storage.dart' ;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
@@ -13,45 +14,46 @@ class _AlbumState extends State<AlbumState> {
   final TextEditingController bandaController = TextEditingController();
   final TextEditingController albumController = TextEditingController();
   final TextEditingController anoController = TextEditingController();
-  firebase_storage.FirebaseStorage storage = firebase_storage.FirebaseStorage.instance;
   File? _selectedFile;
-
+  final int id = 0 ;
   final _formKey = GlobalKey<FormState>();
 
-  Future<void> _submitForm() async {
-    if (_formKey.currentState!.validate()) {
-      try {
-        DocumentReference document = await FirebaseFirestore.instance.collection('albums').add({
-          'banda': bandaController.text,
-          'album': albumController.text,
-          'ano': int.parse(anoController.text),
-          'votos': 0,
-        });
+Future<void> _submitForm() async {
+  if (_formKey.currentState!.validate()) {
+    String? url; // Definir url aquí
 
-        print('Datos guardados en Firestore');
-
-        if (_selectedFile != null) {
-          firebase_storage.Reference ref = storage.ref().child('albums').child('${document.id}.jpg');
-          await ref.putFile(_selectedFile!).then((firebase_storage.TaskSnapshot snapshot) {
-            print('Imagen subida exitosamente');
-          }).catchError((error) {
-            print('Error al subir imagen: $error');
-          });
-        }
-
-        Navigator.pushNamed(context, '/albumList');
-        bandaController.clear();
-        albumController.clear();
-        anoController.clear();
-      } catch (error) {
-        print('Error al guardar datos: $error');
+    try {
+      if (_selectedFile != null) {
+        final storageRef = FirebaseStorage.instance.ref();
+        final fotoref = storageRef.child('albums').child('${id+1}.jpg');
+        final uploadTask = await fotoref.putFile(_selectedFile!);
+        url = await uploadTask.ref.getDownloadURL(); // Asignar valor a url
+        print('Imagen subida y URL guardada exitosamente');
       }
+
+      DocumentReference document = await FirebaseFirestore.instance.collection('albums').add({
+        'banda': bandaController.text,
+        'album': albumController.text,
+        'ano': int.parse(anoController.text),
+        'votos': 0,
+        'imagen_url': url ?? '', // Usar url aquí
+      });
+
+      print('Datos guardados en Firestore');
+
+      Navigator.pushNamed(context, '/albumList');
+      
+    } catch (error) {
+      print('Error al guardar datos: $error');
     }
   }
+}
+
+
 
   Future<void> _selectFile() async {
   final picker = ImagePicker();
-  final pickedFile = await picker.getImage(source: ImageSource.camera); // Cambiar source a ImageSource.camera
+  final pickedFile = await picker.pickImage(source: ImageSource.gallery); 
   if (pickedFile != null) {
     setState(() {
       _selectedFile = File(pickedFile.path);
@@ -85,12 +87,12 @@ class _AlbumState extends State<AlbumState> {
               _buildNumberField(anoController, 'Año de lanzamiento'),
               ElevatedButton(
                 onPressed: _selectFile,
-                child: Text('Seleccionar Archivo'),
+                child: Text('Seleccionar Foto'),
               ),
               _buildPreviewImage(),
               ElevatedButton(
                 onPressed: _submitForm,
-                child: Text('Guardar Datos'),
+                child: Text('Guardar Banda'),
               ),
             ],
           ),
