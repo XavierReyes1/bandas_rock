@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "821890838252",
+    "project_id": "bandas-de-rock-eefad",
+    "storage_bucket": "bandas-de-rock-eefad.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:821890838252:android:8354d577d1b0a97e9e7fc9",
+        "android_client_info": {
+          "package_name": "com.example.bandas_rock"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBiCx-3VwQplE88zSFZ6HhDD7NJ54SW3qQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

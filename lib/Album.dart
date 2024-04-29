@@ -1,0 +1,139 @@
+import 'package:flutter/material.dart';
+import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
+
+class AlbumState extends StatefulWidget {
+  @override
+  _AlbumState createState() => _AlbumState();
+}
+
+class _AlbumState extends State<AlbumState> {
+  final TextEditingController bandaController = TextEditingController();
+  final TextEditingController albumController = TextEditingController();
+  final TextEditingController anoController = TextEditingController();
+  firebase_storage.FirebaseStorage storage = firebase_storage.FirebaseStorage.instance;
+  File? _selectedFile;
+
+  final _formKey = GlobalKey<FormState>();
+
+  Future<void> _submitForm() async {
+    if (_formKey.currentState!.validate()) {
+      try {
+        DocumentReference document = await FirebaseFirestore.instance.collection('albums').add({
+          'banda': bandaController.text,
+          'album': albumController.text,
+          'ano': int.parse(anoController.text),
+          'votos': 0,
+        });
+
+        print('Datos guardados en Firestore');
+
+        if (_selectedFile != null) {
+          firebase_storage.Reference ref = storage.ref().child('albums').child('${document.id}.jpg');
+          await ref.putFile(_selectedFile!).then((firebase_storage.TaskSnapshot snapshot) {
+            print('Imagen subida exitosamente');
+          }).catchError((error) {
+            print('Error al subir imagen: $error');
+          });
+        }
+
+        Navigator.pushNamed(context, '/albumList');
+        bandaController.clear();
+        albumController.clear();
+        anoController.clear();
+      } catch (error) {
+        print('Error al guardar datos: $error');
+      }
+    }
+  }
+
+  Future<void> _selectFile() async {
+  final picker = ImagePicker();
+  final pickedFile = await picker.getImage(source: ImageSource.camera); // Cambiar source a ImageSource.camera
+  if (pickedFile != null) {
+    setState(() {
+      _selectedFile = File(pickedFile.path);
+    });
+  }
+}
+
+
+  Widget _buildPreviewImage() {
+    if (_selectedFile != null) {
+      return Image.file(_selectedFile!);
+    } else {
+      return Container();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Creación de Bandas'),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            children: <Widget>[
+              _buildTextField(bandaController, 'Nombre de la banda'),
+              _buildTextField(albumController, 'Nombre del álbum'),
+              _buildNumberField(anoController, 'Año de lanzamiento'),
+              ElevatedButton(
+                onPressed: _selectFile,
+                child: Text('Seleccionar Archivo'),
+              ),
+              _buildPreviewImage(),
+              ElevatedButton(
+                onPressed: _submitForm,
+                child: Text('Guardar Datos'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTextField(TextEditingController controller, String label) {
+    return TextFormField(
+      controller: controller,
+      decoration: InputDecoration(
+        labelText: label,
+      ),
+      validator: (value) {
+        if (value == null || value.isEmpty) {
+          return 'Por favor ingresa el $label';
+        }
+        return null;
+      },
+    );
+  }
+
+  Widget _buildNumberField(TextEditingController controller, String label) {
+    return TextFormField(
+      controller: controller,
+      decoration: InputDecoration(
+        labelText: label,
+      ),
+      keyboardType: TextInputType.number,
+      validator: (value) {
+        if (value == null || value.isEmpty) {
+          return 'Por favor ingresa el $label';
+        }
+        if (int.tryParse(value) == null) {
+          return 'Por favor ingresa un año válido';
+        }
+        int ano = int.parse(value);
+        if (ano < 1900 || ano > DateTime.now().year) {
+          return 'Por favor ingresa un año válido';
+        }
+        return null;
+      },
+    );
+  }
+}
