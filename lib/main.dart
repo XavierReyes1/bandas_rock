@@ -18,7 +18,7 @@ class MyApp extends StatelessWidget {
       title: 'My App',
       initialRoute: '/',
       routes: {
-        '/': (context) => AlbumList(),
+        '/': (context) => AlbumState(),
         '/albumList': (context) => AlbumList(),
       },
     );

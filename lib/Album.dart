@@ -1,6 +1,5 @@
-
 import 'package:flutter/material.dart';
-import 'package:firebase_storage/firebase_storage.dart' ;
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
@@ -15,52 +14,49 @@ class _AlbumState extends State<AlbumState> {
   final TextEditingController albumController = TextEditingController();
   final TextEditingController anoController = TextEditingController();
   File? _selectedFile;
-  final int id = 0 ;
+  final int id = 0;
   final _formKey = GlobalKey<FormState>();
 
-Future<void> _submitForm() async {
-  if (_formKey.currentState!.validate()) {
-    String? url; // Definir url aquí
+  Future<void> _submitForm() async {
+    if (_formKey.currentState!.validate()) {
+      String? url; // Definir url aquí
 
-    try {
-      if (_selectedFile != null) {
-        final storageRef = FirebaseStorage.instance.ref();
-        final fotoref = storageRef.child('albums').child('${id+1}.jpg');
-        final uploadTask = await fotoref.putFile(_selectedFile!);
-        url = await uploadTask.ref.getDownloadURL(); // Asignar valor a url
-        print('Imagen subida y URL guardada exitosamente');
+      try {
+        if (_selectedFile != null) {
+          final storageRef = FirebaseStorage.instance.ref();
+          final fotoref = storageRef.child('albums').child('${id + 1}.jpg');
+          final uploadTask = await fotoref.putFile(_selectedFile!);
+          url = await uploadTask.ref.getDownloadURL(); // Asignar valor a url
+          print('Imagen subida y URL guardada exitosamente');
+        }
+
+        DocumentReference document =
+            await FirebaseFirestore.instance.collection('albums').add({
+          'banda': bandaController.text,
+          'album': albumController.text,
+          'ano': int.parse(anoController.text),
+          'votos': 0,
+          'imagen_url': url ?? '', // Usar url aquí
+        });
+
+        print('Datos guardados en Firestore');
+
+        Navigator.pushNamed(context, '/albumList');
+      } catch (error) {
+        print('Error al guardar datos: $error');
       }
-
-      DocumentReference document = await FirebaseFirestore.instance.collection('albums').add({
-        'banda': bandaController.text,
-        'album': albumController.text,
-        'ano': int.parse(anoController.text),
-        'votos': 0,
-        'imagen_url': url ?? '', // Usar url aquí
-      });
-
-      print('Datos guardados en Firestore');
-
-      Navigator.pushNamed(context, '/albumList');
-      
-    } catch (error) {
-      print('Error al guardar datos: $error');
     }
   }
-}
-
-
 
   Future<void> _selectFile() async {
-  final picker = ImagePicker();
-  final pickedFile = await picker.pickImage(source: ImageSource.gallery); 
-  if (pickedFile != null) {
-    setState(() {
-      _selectedFile = File(pickedFile.path);
-    });
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      setState(() {
+        _selectedFile = File(pickedFile.path);
+      });
+    }
   }
-}
-
 
   Widget _buildPreviewImage() {
     if (_selectedFile != null) {
@@ -94,6 +90,13 @@ Future<void> _submitForm() async {
                 onPressed: _submitForm,
                 child: Text('Guardar Banda'),
               ),
+              SizedBox(height: 16), // Espacio entre el botón y el ElevatedButton
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pushNamed(context, '/albumList');
+                },
+                child: Text('Ver Álbumes'),
+              ),
             ],
           ),
         ),
@@ -101,7 +104,8 @@ Future<void> _submitForm() async {
     );
   }
 
-  Widget _buildTextField(TextEditingController controller, String label) {
+  Widget _buildTextField(
+      TextEditingController controller, String label) {
     return TextFormField(
       controller: controller,
       decoration: InputDecoration(
@@ -116,7 +120,8 @@ Future<void> _submitForm() async {
     );
   }
 
-  Widget _buildNumberField(TextEditingController controller, String label) {
+  Widget _buildNumberField(
+      TextEditingController controller, String label) {
     return TextFormField(
       controller: controller,
       decoration: InputDecoration(
